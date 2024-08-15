@@ -16,6 +16,14 @@ export type Customer = {
   image_url: string;
 };
 
+export type Book = {
+  id: number;
+  name: string;
+  rating: string;
+  desc: string;
+};
+
+
 export type Invoice = {
   id: string;
   customer_id: string;

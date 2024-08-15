@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { sql } from '@vercel/postgres';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { client } from '@/app/lib/db';
 
 
 const FormSchema = z.object({
@@ -18,11 +19,29 @@ const FormSchema = z.object({
   }),
   date: z.string(),
 });
+
+const BookFormSchema = z.object({
+  id: z.string(),
+  rating: z.coerce
+    .number()
+    .gt(0, { message: 'Please enter an rating greater than $0.' }),
+  title: z.string().min(1, { message: "title required" }),
+});
+
+
 export type State = {
   errors?: {
     customerId?: string[];
     amount?: string[];
     status?: string[];
+  };
+  message?: string | null;
+};
+
+export type BookState = {
+  errors?: {
+    title?: string[];
+    rating?: string[];
   };
   message?: string | null;
 };
@@ -97,4 +116,31 @@ export async function deleteInvoice(id: string) {
   } catch (error) {
     return { message: 'Database Error: Failed to Delete Invoice.' };
   }
+}
+
+const CreateBook = BookFormSchema.omit({ id: true });
+export async function createBook(prevState: BookState, formData: FormData) {
+  const validatedFields = CreateBook.safeParse({
+    title: formData.get('title'),
+    rating: formData.get('rating'),
+  });
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Fields. Failed to Create book.',
+    };
+  }
+
+  const { title, rating } = validatedFields.data;
+  const id = Math.ceil(Math.random() * 10000000);
+  try {
+    await client.hSet(`books:${id}`, { title: title, rating: rating });
+  } catch (error) {
+    return {
+      message: 'Database Error: Failed to Create Invoice.',
+    };
+  }
+
+  revalidatePath('/dashboard/books');
+  redirect('/dashboard/books');
 }
