@@ -14,7 +14,7 @@ import clsx from 'clsx';
 const links = [
   { name: '首页', href: '/dashboard', icon: HomeIcon },
   {
-    name: '发票',
+    name: '订单',
     href: '/dashboard/invoices',
     icon: DocumentDuplicateIcon,
   },
